@@ -1,0 +1,14 @@
+{
+  "name": "cjtechworld/cj-cli",
+  "description": "A tiny, developer-friendly PHP CLI helper to scaffold PSR-4 classes and manage safe deletes.",
+  "type": "project",
+  "license": "MIT",
+  "require": {
+    "php": ">=7.4"
+  },
+  "autoload": {
+    "psr-4": {
+      "App\\": "app/"
+    }
+  }
+}

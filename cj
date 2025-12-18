@@ -31,7 +31,8 @@ if ($argc === 2 && $argv[1] === '--help') {
 
   $examples = [];
   foreach ($allowedTypes as $type) {
-    $examples[] = "  php cj:make $type app Example/{$type}Example";
+    $examples[] = "  php cj make:$type app Example/{$type}Example";
+    $examples[] = "  php cj make $type app Example/{$type}Example";
   }
   $examplesText = implode("\n", $examples);
 
@@ -236,12 +237,26 @@ if ($fileArgs) {
  * CLASS / INTERFACE / TRAIT / ENUM MODE
  * -------------------------
  */
-if ($argc < 3 || !str_starts_with($argv[1], 'cj:make')) {
+$allowed = ['class', 'interface', 'abstract', 'trait', 'enum'];
+
+// Accept forms:
+//   php cj make:class app Path/ClassName
+//   php cj make class app Path/ClassName
+//   php cj:make class app Path/ClassName   (legacy)
+$looksLikeMake = false;
+if ($argc >= 2) {
+  if (str_starts_with($argv[1], 'make:')) $looksLikeMake = true;
+  elseif ($argv[1] === 'make' && $argc >= 4) $looksLikeMake = true;
+  elseif (str_starts_with($argv[1], 'cj:make')) $looksLikeMake = true;
+}
+
+if (!$looksLikeMake) {
   echo color("Usage:\n", 'yellow');
   echo "  php cj delete path\n";
   echo "  php cj undo\n";
   echo "  php cj file.php [file2.php ...]\n";
-  echo "  php cj:make [class|interface|abstract|trait|enum] app Path/ClassName\n";
+  echo "  php cj make:class app Path/ClassName\n";
+  echo "  php cj make class app Path/ClassName\n";
   exit(1);
 }
 
@@ -268,12 +283,29 @@ if ($cwd !== $scriptDir && basename($scriptDir) === 'cj-cli') {
   }
 }
 
+// Normalize args and extract type
 $args = $argv;
-array_shift($args); // remove cj:make
-
 $type = 'class';
-$allowed = ['class', 'interface', 'abstract', 'trait', 'enum'];
-if (in_array($args[0], $allowed, true)) $type = array_shift($args);
+
+if (str_starts_with($args[1], 'make:')) {
+  $type = substr($args[1], strlen('make:'));
+  array_shift($args); // remove make:class
+} elseif ($args[1] === 'make') {
+  array_shift($args); // remove 'make'
+  if (!empty($args[1]) && in_array($args[1], $allowed, true)) {
+    $type = $args[1];
+    array_shift($args); // remove type
+  }
+} elseif (str_starts_with($args[1], 'cj:make')) {
+  array_shift($args); // remove 'cj:make'
+  if (!empty($args[1]) && in_array($args[1], $allowed, true)) {
+    $type = array_shift($args);
+  }
+}
+
+// Now $args is aligned like: [script, root, target, ...] -> shift to make parsing consistent
+// shift off the script name so the rest of the code can use the same pattern
+array_shift($args); // remove script name (was originally $argv[0])
 
 $root = array_shift($args);
 if ($root !== 'app') exit(color("Only 'app' root is supported for class generation.\n", 'red'));
