@@ -22,7 +22,7 @@ Clone the repo and install the `cj` script where you'll use it.
 git clone https://github.com/cjtechworld/cj-cli.git
 ```
 
-Important: cloning creates a `cj-cli/` directory. The `cj` script uses its own directory as the base (it calls `__DIR__` internally). For commands like `php cj` or `php cj:make` to create files in _your project_, move the `cj` script into your project root (or install it globally).
+Important: cloning creates a `cj-cli/` directory. The `cj` script uses its own directory as the base (it calls `__DIR__` internally). For commands like `php cj`, `php cj make:class` or `php cj make class` to create files in _your project_, move the `cj` script into your project root (or install it globally).
 
 Examples:
 
@@ -58,11 +58,14 @@ php cj foo.php bar/baz.php
 Generate PSR‑4 scaffolding (class/interface/abstract/trait/enum):
 
 ```bash
-php cj:make class app Path/ClassName [extends Base] [implements InterfaceA,InterfaceB]
-php cj:make interface app Path/MyInterface
-php cj:make trait app Path/MyTrait
-php cj:make abstract app Path/MyAbstract
-php cj:make enum app Path/MyEnum
+# Either form works:
+php cj make:class app Path/ClassName   # preferred short form
+php cj make class app Path/ClassName   # alternative space-separated form
+
+php cj make:interface app Path/MyInterface
+php cj make:trait app Path/MyTrait
+php cj make:abstract app Path/MyAbstract
+php cj make:enum app Path/MyEnum
 ```
 
 Safe delete / trash / undo:
@@ -96,7 +99,9 @@ Note: If you run commands while `cj` is still inside `cj-cli/`, the script detec
 Create a class:
 
 ```bash
-php cj:make class app Example/ClassExample
+php cj make:class app Example/ClassExample
+# or
+php cj make class app Example/ClassExample
 # created: app/Example/ClassExample.php
 ```
 
@@ -129,14 +134,14 @@ php cj trash restore
   - Move the `cj` script into your project root and re-run: `mv cj-cli/cj . && chmod +x cj`
   - Or install it globally `sudo mv cj /usr/local/bin/cj` so it can be run from any project.
   - If files were already created in the wrong folder, move them into your project or remove and re-run from the correct location.
-- Want to skip the confirmation prompt? Add `--yes` (or `-y` / `--force`) to the command: `php cj:make class app Example/ClassExample --yes`.
+- Want to skip the confirmation prompt? Add `--yes` (or `-y` / `--force`) to the command: `php cj make:class app Example/ClassExample --yes` or `php cj make class app Example/ClassExample --yes`.
 
 ---
 
 ## 🧪 Scripts & Behavior Notes
 
 - File creation mode: pass `*.php` file paths to create minimal PHP files with `declare(strict_types=1)` at top.
-- `cj:make` generates a minimal PSR‑4-compliant PHP file using the `App\` base namespace and puts the file under `app/...`.
+- `make:...` (e.g. `make:class`) or `make ...` (e.g. `make class`) generates a minimal PSR‑4-compliant PHP file using the `App\` base namespace and places the file under `app/...`.
 - Deleting is _safe_ — files are moved to a `.trash` folder with a `.trashlog.json` ledger used by `trash`, `trash restore`, and `undo` commands.
 
 ---

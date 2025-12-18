@@ -214,7 +214,7 @@
             Download or clone the CJ CLI repository to your project directory:
             <div class="command-examples"><pre>git clone https://github.com/cjtechworld/cj-cli.git</pre></div>
             Or visit: <a href="https://github.com/cjtechworld/cj-cli" target="_blank" rel="noopener">https://github.com/cjtechworld/cj-cli</a>
-            <div class="mt-2 small text-muted">Important: cloning will create a <code>cj-cli</code> folder. The <code>cj</code> script must be in your project root (or in your PATH) for commands like <code>php cj</code> or <code>php cj:make</code> to work correctly. Internally the script uses its own directory as the project root (it uses PHP's <code>__DIR__</code>), so leaving it in the <code>cj-cli</code> folder will cause generated files to appear relative to that folder instead of your project.</div>
+            <div class="mt-2 small text-muted">Important: cloning will create a <code>cj-cli</code> folder. The <code>cj</code> script must be in your project root (or in your PATH) for commands like <code>php cj</code>, <code>php cj make:class</code> or <code>php cj make class</code> to work correctly. Internally the script uses its own directory as the project root (it uses PHP's <code>__DIR__</code>), so leaving it in the <code>cj-cli</code> folder will cause generated files to appear relative to that folder instead of your project.</div>
             <div class="command-examples mt-2"><pre># Move the script into your project root (Linux/macOS)
 mv cj-cli/cj .
 # Make it executable
@@ -251,7 +251,9 @@ php cj --help
           <div class="card">
             <div class="card-body p-2">
               <div class="small text-muted">Generate class / interface / trait / enum</div>
-              <pre class="mb-0 cmd-block prompt">php cj:make class app Path/ClassName</pre>
+              <pre class="mb-0 cmd-block prompt">php cj make:class app Path/ClassName
+# or
+php cj make class app Path/ClassName</pre>
             </div>
           </div>
         </div>
@@ -299,13 +301,17 @@ declare(strict_types=1);
       </div>
 
       <h2>Generate PSR-4 Class / Interface / Trait / Enum</h2>
-      <p class="small text-muted">Use the <code>cj</code> script to run generation commands. PSR-4 generation uses the <code>cj:make</code> command (e.g. <code>php cj:make class app Path/ClassName</code>); general file creation uses the plain <code>php cj foo.php</code> form.</p>
+      <p class="small text-muted">Use the <code>cj</code> script to run generation commands. PSR-4 generation uses either the short <code>make:class</code> form (e.g. <code>php cj make:class app Path/ClassName</code>) or the space-separated form (e.g. <code>php cj make class app Path/ClassName</code>); general file creation uses the plain <code>php cj foo.php</code> form.</p>
       <div class="position-relative command-examples">
         <pre id="make-class">
-php cj:make class app Path/ClassName [extends Base] [implements Interface,...]
+php cj make:class app Path/ClassName [extends Base] [implements Interface,...]
+# or
+php cj make class app Path/ClassName [extends Base] [implements Interface,...]
 Options: class, abstract, interface, trait, enum
 Example:
-php cj:make class app Example/ClassExample</pre
+php cj make:class app Example/ClassExample
+# or
+php cj make class app Example/ClassExample</pre
         >
         <button class="btn btn-sm btn-light copy-btn" data-target="make-class">
           Copy
@@ -352,7 +358,9 @@ Restore deleted items interactively or all at once.</pre
       <div class="position-relative command-examples">
         <pre id="examples">
 php cj foo.php bar.php baz/test.php
-php cj:make class app Example/ClassExample
+php cj make:class app Example/ClassExample
+# or
+php cj make class app Example/ClassExample
 php cj delete app/Example/ClassExample.php
 php cj undo
 php cj trash restore</pre
@@ -424,7 +432,7 @@ php cj trash restore</pre
 chmod +x cj</pre></div></li>
         <li>Or make it globally available so you can run it from any project:<div class="command-examples mt-2"><pre>sudo mv cj /usr/local/bin/cj</pre></div></li>
         <li>If files were already created in the wrong folder, move them into your project or remove and re-run the command from the correct location.</li>
-        <li class="mt-2">Tip: If you understand the consequences and want to skip the confirmation prompt, add <code>--yes</code> (or <code>-y</code> / <code>--force</code>) to your command, e.g. <code>php cj --yes foo.php</code> or <code>php cj:make class app Example/ClassExample --yes</code>.</li>
+        <li class="mt-2">Tip: If you understand the consequences and want to skip the confirmation prompt, add <code>--yes</code> (or <code>-y</code> / <code>--force</code>) to your command, e.g. <code>php cj --yes foo.php</code> or <code>php cj make:class app Example/ClassExample --yes</code> or <code>php cj make class app Example/ClassExample --yes</code>.</li>
       </ol>
     </div>
 
@@ -448,7 +456,9 @@ Creates files:
       <div class="col-md-6">
         <h6>Command</h6>
         <div class="cmd-block position-relative">
-          <pre id="make-class-cmd" class="prompt">php cj:make class app Example/ClassExample</pre>
+          <pre id="make-class-cmd" class="prompt">php cj make:class app Example/ClassExample
+# or
+php cj make class app Example/ClassExample</pre>
           <button class="btn btn-sm btn-light copy-btn" data-target="make-class-cmd">Copy</button>
         </div>
       </div>
@@ -486,7 +496,9 @@ class ClassExample extends BaseClass implements InterfaceA, InterfaceB
       <div class="col-md-6">
         <h6>Command</h6>
         <div class="cmd-block position-relative">
-          <pre id="make-interface-cmd" class="prompt">php cj:make interface app Example/MyInterface</pre>
+          <pre id="make-interface-cmd" class="prompt">php cj make:interface app Example/MyInterface
+# or
+php cj make interface app Example/MyInterface</pre>
           <button class="btn btn-sm btn-light copy-btn" data-target="make-interface-cmd">Copy</button>
         </div>
       </div>
@@ -520,7 +532,9 @@ interface MyInterface
       <div class="col-md-6">
         <h6>Command</h6>
         <div class="cmd-block position-relative">
-          <pre id="make-abstract-cmd" class="prompt">php cj:make abstract app Example/MyAbstract</pre>
+          <pre id="make-abstract-cmd" class="prompt">php cj make:abstract app Example/MyAbstract
+# or
+php cj make abstract app Example/MyAbstract</pre>
           <button class="btn btn-sm btn-light copy-btn" data-target="make-abstract-cmd">Copy</button>
         </div>
       </div>
@@ -554,7 +568,9 @@ abstract class MyAbstract
       <div class="col-md-6">
         <h6>Command</h6>
         <div class="cmd-block position-relative">
-          <pre id="make-trait-cmd" class="prompt">php cj:make trait app Example/MyTrait</pre>
+          <pre id="make-trait-cmd" class="prompt">php cj make:trait app Example/MyTrait
+# or
+php cj make trait app Example/MyTrait</pre>
           <button class="btn btn-sm btn-light copy-btn" data-target="make-trait-cmd">Copy</button>
         </div>
       </div>
@@ -588,7 +604,9 @@ trait MyTrait
       <div class="col-md-6">
         <h6>Command</h6>
         <div class="cmd-block position-relative">
-          <pre id="make-enum-cmd" class="prompt">php cj:make enum app Example/MyEnum</pre>
+          <pre id="make-enum-cmd" class="prompt">php cj make:enum app Example/MyEnum
+# or
+php cj make enum app Example/MyEnum</pre>
           <button class="btn btn-sm btn-light copy-btn" data-target="make-enum-cmd">Copy</button>
         </div>
       </div>

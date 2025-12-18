@@ -40,7 +40,11 @@ if ($argc === 2 && $argv[1] === '--help') {
 CJ CLI Tool
 Usage:
   php cj [file.php]                        Create one or multiple PHP files with strict types
-  php cj:make [class|abstract|interface|trait|enum] app Path/ClassName [extends Base] [implements Interface,...]
+  php cj make:class app Path/ClassName   # or: php cj make class app Path/ClassName
+  php cj make:interface app Path/MyInterface
+  php cj make:trait app Path/MyTrait
+  php cj make:abstract app Path/MyAbstract
+  php cj make:enum app Path/MyEnum
                                            Generate a PSR-4 class, interface, trait, abstract class or enum
   php cj delete path/to/file_or_directory  Safely delete file/directory (moves to .trash)
   php cj undo                              Undo last delete
@@ -55,7 +59,8 @@ Examples:
 $examplesText
   php cj foo/bar.php baz/test.php
   php cj --yes foo/bar.php                 # create files without confirmation
-  php cj:make class app Example/ClassExample --yes
+  php cj make:class app Example/ClassExample --yes
+  php cj make class app Example/ClassExample --yes
   php cj delete app/Example/ClassExample.php
   php cj undo
   php cj trash restore
