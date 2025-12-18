@@ -1,5 +1,7 @@
 # CJ CLI — A tiny, developer-friendly PHP helper
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE) [![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://cjtechworld.github.io/cj-cli/)
+
 CJ CLI is a small PHP command-line utility to speed up common PHP project tasks: creating PHP files with strict types, scaffolding PSR‑4 classes (class/interface/trait/abstract/enum), and safely deleting files/directories (moves to a `.trash` folder with undo/restore support).
 
 ---
@@ -163,6 +165,7 @@ Copyright (c) 2025 cjtechworld
 ## 📬 Contact / Links
 
 - Repository: https://github.com/cjtechworld/cj-cli
+- Documentation: https://cjtechworld.github.io/cj-cli/ — Hosted docs (GitHub Pages)
 - Issues: use the GitHub issues page for feature requests and bug reports
 
 ---
