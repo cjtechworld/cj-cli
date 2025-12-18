@@ -302,6 +302,7 @@ declare(strict_types=1);
 
       <h2>Generate PSR-4 Class / Interface / Trait / Enum</h2>
       <p class="small text-muted">Use the <code>cj</code> script to run generation commands. PSR-4 generation uses either the short <code>make:class</code> form (e.g. <code>php cj make:class app Path/ClassName</code>) or the space-separated form (e.g. <code>php cj make class app Path/ClassName</code>); general file creation uses the plain <code>php cj foo.php</code> form.</p>
+<p class="small text-muted">Provide fully-qualified class names (FQCNs, e.g. <code>Other\Pkg\InterfaceName</code>) and the generator will automatically add <code>use</code> statements at the top of the file; short names are treated as types in the <code>App\</code> namespace.</p>
       <div class="position-relative command-examples">
         <pre id="make-class">
 php cj make:class app Path/ClassName [extends Base] [implements Interface,...]
