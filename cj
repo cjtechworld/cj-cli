@@ -321,8 +321,15 @@ $extends = null;
 $implements = [];
 while ($args) {
   $key = array_shift($args);
-  if ($key === 'extends') $extends = array_shift($args);
-  elseif ($key === 'implements') $implements = array_map('trim', explode(',', array_shift($args)));
+  if ($key === 'extends') {
+    $val = array_shift($args);
+    // interfaces may extend multiple parents (comma-separated)
+    if ($type === 'interface') {
+      $extends = array_map('trim', explode(',', $val));
+    } else {
+      $extends = trim($val);
+    }
+  } elseif ($key === 'implements') $implements = array_map('trim', explode(',', array_shift($args)));
 }
 
 /**
@@ -342,14 +349,28 @@ if (file_exists($file)) exit(color("File already exists: $file\n", 'red'));
 
 // Auto-use imports
 $uses = [];
-$addUse = function (?string $name) use (&$uses, $namespace) {
+$addUse = function ($name) use (&$uses, $namespace) {
   if (!$name) return;
-  $fqcn = str_contains($name, '\\') ? $name : $namespace . '\\' . $name;
-  if (!str_starts_with($fqcn, $namespace)) $uses[$fqcn] = $fqcn;
+  $names = is_array($name) ? $name : [$name];
+  foreach ($names as $n) {
+    if (!$n) continue;
+    $fqcn = str_contains($n, '\\') ? $n : $namespace . '\\' . $n;
+    if (!str_starts_with($fqcn, $namespace)) $uses[$fqcn] = $fqcn;
+  }
 };
 $addUse($extends);
-foreach ($implements as $i) $addUse($i);
+$addUse($implements);
 
+// Helper to get short name for use in signatures
+$short = function ($name) {
+  if (is_array($name)) {
+    return array_map(fn($n) => ($n === '' ? '' : array_reverse(explode('\\', $n))[0]), $name);
+  }
+  if (!$name) return '';
+  return array_reverse(explode('\\', $name))[0];
+};
+
+// Build signature
 $signature = match ($type) {
   'interface' => "interface $className",
   'abstract' => "abstract class $className",
@@ -357,13 +378,26 @@ $signature = match ($type) {
   'enum' => "enum $className",
   default => "class $className",
 };
-if ($extends && $type === 'class') $signature .= " extends $extends";
-if ($implements && $type === 'class') $signature .= " implements " . implode(', ', $implements);
+
+if ($type === 'interface') {
+  if ($extends) {
+    $extNames = is_array($extends) ? $extends : array_map('trim', explode(',', $extends));
+    $shortNames = array_map(fn($n) => $short($n), $extNames);
+    $signature .= ' extends ' . implode(', ', $shortNames);
+  }
+} else {
+  if ($extends) $signature .= " extends " . $short($extends);
+  if (!empty($implements) && in_array($type, ['class', 'abstract'], true)) {
+    $sigImpls = array_map(fn($n) => $short($n), $implements);
+    $signature .= ' implements ' . implode(', ', $sigImpls);
+  }
+}
 
 $body = match ($type) {
   'interface' => "    // Interface methods\n",
   'trait' => "    // Trait methods\n",
   'enum' => "\n    case EXAMPLE;\n",
+  'abstract' => "    \n",
   default => "",
 };
 

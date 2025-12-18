@@ -62,9 +62,13 @@ Generate PSR‑4 scaffolding (class/interface/abstract/trait/enum):
 php cj make:class app Path/ClassName   # preferred short form
 php cj make class app Path/ClassName   # alternative space-separated form
 
-php cj make:interface app Path/MyInterface
+# You can use 'extends' and 'implements' where appropriate:
+php cj make:class app Path/ClassName extends Base implements InterfaceA,InterfaceB
+php cj make:abstract app Path/MyAbstract extends BaseAbstract implements InterfaceA
+# Interfaces can extend multiple interfaces:
+php cj make:interface app Path/MyInterface extends BaseInterface1,BaseInterface2
+
 php cj make:trait app Path/MyTrait
-php cj make:abstract app Path/MyAbstract
 php cj make:enum app Path/MyEnum
 ```
 
@@ -141,7 +145,12 @@ php cj trash restore
 ## 🧪 Scripts & Behavior Notes
 
 - File creation mode: pass `*.php` file paths to create minimal PHP files with `declare(strict_types=1)` at top.
-- `make:...` (e.g. `make:class`) or `make ...` (e.g. `make class`) generates a minimal PSR‑4-compliant PHP file using the `App\` base namespace and places the file under `app/...`.
+- `make:...` (e.g. `make:class`) or `make ...` (e.g. `make class`) generates a minimal PSR‑4-compliant PHP file using the `App\\` base namespace and places the file under `app/...`.
+
+Notes:
+
+- You can pass `extends` and `implements` to generated classes/abstracts (interfaces may `extends` other interfaces, including multiple parents).
+- Provide FQCNs (e.g. `Other\\Pkg\\Ifc`) to have those types automatically `use`d at the top of the generated file; short names are treated as types in the `App\\` namespace.
 - Deleting is _safe_ — files are moved to a `.trash` folder with a `.trashlog.json` ledger used by `trash`, `trash restore`, and `undo` commands.
 
 ---

@@ -458,7 +458,9 @@ Creates files:
         <div class="cmd-block position-relative">
           <pre id="make-class-cmd" class="prompt">php cj make:class app Example/ClassExample
 # or
-php cj make class app Example/ClassExample</pre>
+php cj make class app Example/ClassExample
+# you can add implements:
+php cj make:class app Example/ClassExample implements Other\\Pkg\\MyInterface,LocalInterface</pre>
           <button class="btn btn-sm btn-light copy-btn" data-target="make-class-cmd">Copy</button>
         </div>
       </div>
@@ -498,7 +500,9 @@ class ClassExample extends BaseClass implements InterfaceA, InterfaceB
         <div class="cmd-block position-relative">
           <pre id="make-interface-cmd" class="prompt">php cj make:interface app Example/MyInterface
 # or
-php cj make interface app Example/MyInterface</pre>
+php cj make interface app Example/MyInterface
+# interfaces can extend multiple parents:
+php cj make:interface app Example/MyInterface extends BaseInterface1,Other\pkg\BaseInterface</pre>
           <button class="btn btn-sm btn-light copy-btn" data-target="make-interface-cmd">Copy</button>
         </div>
       </div>
