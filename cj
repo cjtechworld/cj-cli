@@ -1,0 +1,350 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+/**
+ * -------------------
+ * CLI COLORS
+ * -------------------
+ */
+function color(string $text, string $color): string
+{
+  $colors = [
+    'red' => '0;31',
+    'green' => '0;32',
+    'yellow' => '1;33',
+    'blue' => '0;34',
+    'cyan' => '0;36',
+    'white' => '1;37',
+  ];
+  return "\033[" . ($colors[$color] ?? '0') . "m" . $text . "\033[0m";
+}
+
+/**
+ * -------------------
+ * HELP COMMAND
+ * -------------------
+ */
+$allowedTypes = ['class', 'interface', 'abstract', 'trait', 'enum'];
+if ($argc === 2 && $argv[1] === '--help') {
+
+  $examples = [];
+  foreach ($allowedTypes as $type) {
+    $examples[] = "  php cj:make $type app Example/{$type}Example";
+  }
+  $examplesText = implode("\n", $examples);
+
+  echo <<<HELP
+CJ CLI Tool
+Usage:
+  php cj [file.php]                        Create one or multiple PHP files with strict types
+  php cj:make [class|abstract|interface|trait|enum] app Path/ClassName [extends Base] [implements Interface,...]
+                                           Generate a PSR-4 class, interface, trait, abstract class or enum
+  php cj delete path/to/file_or_directory  Safely delete file/directory (moves to .trash)
+  php cj undo                              Undo last delete
+  php cj trash                             List items in trash
+  php cj trash restore                     Restore items from trash (selectively or all)
+  php cj --help                            Show this help message
+
+Options:
+  --yes, -y, --force                       Skip confirmation prompts (non-interactive)
+
+Examples:
+$examplesText
+  php cj foo/bar.php baz/test.php
+  php cj --yes foo/bar.php                 # create files without confirmation
+  php cj:make class app Example/ClassExample --yes
+  php cj delete app/Example/ClassExample.php
+  php cj undo
+  php cj trash restore
+
+HELP;
+  exit(0);
+}
+
+/**
+ * -------------------------
+ * SAFE DELETE + Trash/Undo
+ * -------------------------
+ */
+if ($argc >= 2 && $argv[1] === 'delete') {
+
+  $relativePath = implode(DIRECTORY_SEPARATOR, array_slice($argv, 2));
+  $target = realpath($relativePath);
+
+  if (!$target) exit(color("❌ Path does not exist: $relativePath\n", 'red'));
+
+  $projectRoot = realpath(__DIR__);
+  $protected = [
+    $projectRoot,
+    realpath("$projectRoot/app"),
+    realpath("$projectRoot/src"),
+    realpath("$projectRoot/vendor"),
+  ];
+
+  $target = rtrim($target, DIRECTORY_SEPARATOR);
+
+  foreach ($protected as $p) {
+    if ($p && $target === $p) exit(color("🚨 REFUSED: Cannot delete protected directory:\n$target\n", 'red'));
+  }
+
+  if (!str_starts_with($target, $projectRoot)) {
+    exit(color("🚨 REFUSED: Target is outside project:\n$target\n", 'red'));
+  }
+
+  echo color("⚠️  DELETE CONFIRMATION\n", 'yellow');
+  echo "You are deleting:\n  $target\n";
+  echo "Type DELETE to confirm: ";
+  $confirm = trim(fgets(STDIN));
+  if ($confirm !== 'DELETE') exit(color("Aborted.\n", 'yellow'));
+
+  $trashDir = __DIR__ . '/.trash';
+  if (!is_dir($trashDir)) mkdir($trashDir, 0755, true);
+
+  $baseName = basename($target);
+  $counter = 0;
+  $dest = $trashDir . DIRECTORY_SEPARATOR . $baseName;
+  while (file_exists($dest)) {
+    $counter++;
+    $dest = $trashDir . DIRECTORY_SEPARATOR . $baseName . "_$counter";
+  }
+
+  rename($target, $dest);
+
+  $logPath = $trashDir . '/.trashlog.json';
+  $log = file_exists($logPath) ? json_decode(file_get_contents($logPath), true) : [];
+  $log[] = $dest;
+  file_put_contents($logPath, json_encode($log, JSON_PRETTY_PRINT));
+
+  echo color("✅ Moved to project trash: $dest\n", 'green');
+  exit(0);
+}
+
+/**
+ * -------------------
+ * TRASH COMMAND
+ * -------------------
+ */
+$trashDir = __DIR__ . '/.trash';
+$logPath = $trashDir . '/.trashlog.json';
+$log = file_exists($logPath) ? json_decode(file_get_contents($logPath), true) : [];
+
+if ($argc === 2 && $argv[1] === 'trash') {
+  echo color("🗑  Trash contents:\n", 'cyan');
+  foreach ($log as $i => $item) {
+    echo "[" . ($i + 1) . "] " . $item . "\n";
+  }
+  exit(0);
+}
+
+if ($argc === 3 && $argv[1] === 'trash' && $argv[2] === 'restore') {
+  echo color("🗑  Trash contents:\n", 'cyan');
+  foreach ($log as $i => $item) {
+    echo "[" . ($i + 1) . "] " . $item . "\n";
+  }
+
+  echo "\nEnter the number to restore, 'a' to restore all, or 0 to cancel: ";
+  $selection = trim(fgets(STDIN));
+
+  if ($selection === '0') exit(color("Cancelled.\n", 'yellow'));
+
+  if (strtolower($selection) === 'a') {
+    foreach ($log as $item) {
+      if (!file_exists($item)) continue;
+      $restoreTo = __DIR__ . '/' . basename($item);
+      $restoreToDir = dirname($restoreTo);
+      if (!is_dir($restoreToDir)) mkdir($restoreToDir, 0755, true);
+      if (!file_exists($restoreTo)) rename($item, $restoreTo);
+      echo color("🔄 Restored: $restoreTo\n", 'green');
+    }
+    file_put_contents($logPath, json_encode([], JSON_PRETTY_PRINT));
+    exit(0);
+  }
+
+  $selection = (int)$selection;
+  if ($selection < 1 || $selection > count($log)) exit(color("Cancelled or invalid selection.\n", 'yellow'));
+
+  $restorePath = $log[$selection - 1];
+  if (!file_exists($restorePath)) {
+    echo color("⚠️  Item no longer exists: $restorePath\n", 'red');
+    array_splice($log, $selection - 1, 1);
+    file_put_contents($logPath, json_encode($log, JSON_PRETTY_PRINT));
+    exit(0);
+  }
+
+  $restoreTo = __DIR__ . '/' . basename($restorePath);
+  $restoreToDir = dirname($restoreTo);
+  if (!is_dir($restoreToDir)) mkdir($restoreToDir, 0755, true);
+  if (file_exists($restoreTo)) exit(color("⚠️  File already exists at restore location: $restoreTo\n", 'red'));
+
+  rename($restorePath, $restoreTo);
+  echo color("🔄 Restored: $restoreTo\n", 'green');
+
+  array_splice($log, $selection - 1, 1);
+  file_put_contents($logPath, json_encode($log, JSON_PRETTY_PRINT));
+  exit(0);
+}
+
+/**
+ * -------------------
+ * UNDO COMMAND
+ * -------------------
+ */
+if ($argc === 2 && $argv[1] === 'undo') {
+  if (!file_exists($logPath)) exit(color("Nothing to undo.\n", 'yellow'));
+  $log = json_decode(file_get_contents($logPath), true);
+  if (empty($log)) exit(color("Nothing to undo.\n", 'yellow'));
+
+  $last = array_pop($log);
+  if ($last && file_exists($last)) {
+    $restoreTo = __DIR__ . '/' . basename($last);
+    $restoreToDir = dirname($restoreTo);
+    if (!is_dir($restoreToDir)) mkdir($restoreToDir, 0755, true);
+    rename($last, $restoreTo);
+    echo color("🔄 Restored: $restoreTo\n", 'green');
+  } else {
+    echo color("⚠️ Cannot restore (already removed or moved).\n", 'red');
+  }
+
+  file_put_contents($logPath, json_encode($log, JSON_PRETTY_PRINT));
+  exit(0);
+}
+
+/**
+ * -------------------------
+ * FILE MODE (multiple files)
+ * -------------------------
+ */
+$fileArgs = array_filter(array_slice($argv, 1), fn($arg) => str_ends_with($arg, '.php'));
+if ($fileArgs) {
+  foreach ($fileArgs as $filePath) {
+    $dir = dirname($filePath);
+    if ($dir !== '.' && !is_dir($dir)) mkdir($dir, 0755, true);
+    if (file_exists($filePath)) {
+      echo color("❌ File already exists: $filePath\n", 'red');
+      continue;
+    }
+    file_put_contents($filePath, "<?php\n\ndeclare(strict_types=1);\n");
+    echo color("Created file: $filePath\n", 'green');
+  }
+  exit(0);
+}
+
+/**
+ * -------------------------
+ * CLASS / INTERFACE / TRAIT / ENUM MODE
+ * -------------------------
+ */
+if ($argc < 3 || !str_starts_with($argv[1], 'cj:make')) {
+  echo color("Usage:\n", 'yellow');
+  echo "  php cj delete path\n";
+  echo "  php cj undo\n";
+  echo "  php cj file.php [file2.php ...]\n";
+  echo "  php cj:make [class|interface|abstract|trait|enum] app Path/ClassName\n";
+  exit(1);
+}
+
+// Warn if script appears to still be inside the cloned repository directory
+$scriptDir = realpath(__DIR__);
+$cwd = realpath(getcwd());
+// non-interactive flag detection
+$nonInteractive = in_array('--yes', $argv, true) || in_array('--force', $argv, true) || in_array('-y', $argv, true);
+if ($cwd !== $scriptDir && basename($scriptDir) === 'cj-cli') {
+  echo color("⚠️ WARNING: It looks like you're running the script from within the cloned 'cj-cli' folder.\n", 'yellow');
+  echo "This will create files inside: $scriptDir\n";
+  echo "Recommended: move the script to your project root (or install globally) so generated files are created in the right place.\n";
+  echo color("Example (move into project root and make executable):\n  mv {$scriptDir}/cj .\n  chmod +x cj\n", 'yellow');
+  echo color("Or to install globally:\n  sudo mv {$scriptDir}/cj /usr/local/bin/cj\n", 'yellow');
+
+  if ($nonInteractive) {
+    echo color("--yes/--force flag provided; continuing automatically.\n", 'yellow');
+  } else {
+    echo "Type 'continue' to proceed anyway, or press Enter to abort: ";
+    $confirm = trim(fgets(STDIN));
+    if (strtolower($confirm) !== 'continue') {
+      exit(color("Aborted. Move the script and try again.\n", 'yellow'));
+    }
+  }
+}
+
+$args = $argv;
+array_shift($args); // remove cj:make
+
+$type = 'class';
+$allowed = ['class', 'interface', 'abstract', 'trait', 'enum'];
+if (in_array($args[0], $allowed, true)) $type = array_shift($args);
+
+$root = array_shift($args);
+if ($root !== 'app') exit(color("Only 'app' root is supported for class generation.\n", 'red'));
+
+$target = array_shift($args);
+
+$extends = null;
+$implements = [];
+while ($args) {
+  $key = array_shift($args);
+  if ($key === 'extends') $extends = array_shift($args);
+  elseif ($key === 'implements') $implements = array_map('trim', explode(',', array_shift($args)));
+}
+
+/**
+ * PSR-4
+ */
+$basePath = __DIR__ . '/app';
+$baseNamespace = 'App';
+$parts = explode('/', $target);
+$className = array_pop($parts);
+$dir = $basePath . ($parts ? '/' . implode('/', $parts) : '');
+$namespace = $baseNamespace . ($parts ? '\\' . implode('\\', $parts) : '');
+
+if (!is_dir($dir)) mkdir($dir, 0755, true);
+
+$file = "$dir/$className.php";
+if (file_exists($file)) exit(color("File already exists: $file\n", 'red'));
+
+// Auto-use imports
+$uses = [];
+$addUse = function (?string $name) use (&$uses, $namespace) {
+  if (!$name) return;
+  $fqcn = str_contains($name, '\\') ? $name : $namespace . '\\' . $name;
+  if (!str_starts_with($fqcn, $namespace)) $uses[$fqcn] = $fqcn;
+};
+$addUse($extends);
+foreach ($implements as $i) $addUse($i);
+
+$signature = match ($type) {
+  'interface' => "interface $className",
+  'abstract' => "abstract class $className",
+  'trait' => "trait $className",
+  'enum' => "enum $className",
+  default => "class $className",
+};
+if ($extends && $type === 'class') $signature .= " extends $extends";
+if ($implements && $type === 'class') $signature .= " implements " . implode(', ', $implements);
+
+$body = match ($type) {
+  'interface' => "    // Interface methods\n",
+  'trait' => "    // Trait methods\n",
+  'enum' => "\n    case EXAMPLE;\n",
+  default => "",
+};
+
+$useBlock = '';
+foreach ($uses as $fqcn) $useBlock .= "use $fqcn;\n";
+if ($useBlock) $useBlock .= "\n";
+
+$template = <<<PHP
+<?php
+
+declare(strict_types=1);
+
+namespace $namespace;
+
+$useBlock$signature
+{
+$body}
+PHP;
+
+file_put_contents($file, $template);
+echo color("Created: $file\n", 'green');

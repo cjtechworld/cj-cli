@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>CJ CLI Tool Documentation</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: "Segoe UI", sans-serif;
+      }
+      pre {
+        position: relative;
+        padding-right: 3rem;
+        overflow-x: auto;
+      }
+      .copy-btn {
+        position: absolute;
+        top: 0.25rem;
+        right: 0.25rem;
+        z-index: 2;
+      }
+
+      /* Command prompt block (shell vibe) */
+      .cmd-block {
+        background: #0b1220;
+        color: #c7f9c5;
+        font-family: "Fira Code", monospace;
+        border-radius: 6px;
+        padding: 1rem;
+        position: relative;
+        box-shadow: inset 0 0 10px rgba(0,0,0,0.6);
+        margin-bottom: 1rem;
+        border: 1px solid rgba(255,255,255,0.03);
+      }
+      .cmd-block pre {
+        margin: 0;
+        padding: 0;
+        background: transparent;
+        color: inherit;
+        font-size: 0.95rem;
+      }
+      .cmd-block .prompt::before {
+        content: "$ ";
+        color: #7ef08a;
+        margin-right: 0.35rem;
+      }
+
+      /* Typing demo caret */
+      .typed::after {
+        content: '';
+        display: inline-block;
+        width: 1px;
+        height: 1em;
+        background: #7ef08a;
+        margin-left: 3px;
+        animation: blink 1s steps(1) infinite;
+        vertical-align: middle;
+      }
+      @keyframes blink { 50% { opacity: 0 } }
+
+      /* VS Code preview block */
+      .vs-code {
+        background: #ffffff;
+        border-radius: 6px;
+        box-shadow: 0 6px 18px rgba(2,6,23,0.08);
+        overflow: hidden;
+        border: 1px solid rgba(0,0,0,0.06);
+      }
+      .vs-header {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.45rem 0.75rem;
+        background: linear-gradient(180deg,#f3f4f6,#eef2f6);
+        border-bottom: 1px solid rgba(0,0,0,0.04);
+        font-family: "Inter", sans-serif;
+        font-size: 0.9rem;
+        color: #333;
+      }
+      .vs-header .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        display: inline-block;
+      }
+      .vs-header .dot.red { background: #ff5f56; }
+      .vs-header .dot.yellow { background: #ffbd2e; }
+      .vs-header .dot.green { background: #27c93f; }
+      .vs-header .filename {
+        font-weight: 600;
+        margin-left: 0.35rem;
+        color: #111827;
+      }
+      .vs-editor {
+        padding: 1rem;
+        font-family: "Fira Code", monospace;
+        font-size: 0.92rem;
+        color: #1f2937;
+        background: linear-gradient(180deg,#fafafa,#ffffff);
+      }
+
+      .command-examples {
+        background-color: #1e1e1e;
+        color: #d4d4d4;
+        font-family: "Fira Code", monospace;
+        border-radius: 5px;
+        padding: 1rem;
+        overflow-x: auto;
+        box-shadow: inset 0 0 5px #000;
+        margin-bottom: 1rem;
+      }
+      .command-examples pre {
+        background: transparent;
+        color: inherit;
+        margin: 0;
+        padding: 0;
+      }
+
+      .token-keyword {
+        color: #569cd6;
+      }
+      .token-namespace {
+        color: #4ec9b0;
+      }
+      .token-class {
+        color: #c586c0;
+      }
+      .token-comment {
+        color: #6a9955;
+        font-style: italic;
+      }
+      .token-string {
+        color: #ce9178;
+      }
+      .token-function {
+        color: #dcdcaa;
+      }
+      .token-case {
+        color: #d7ba7d;
+      }
+
+      /* Project Tree */
+      .project-tree {
+        font-family: "Fira Code", monospace;
+        background-color: #1e1e1e;
+        color: #d4d4d4;
+        padding: 1rem;
+        border-radius: 5px;
+        box-shadow: inset 0 0 5px #000;
+        margin-bottom: 2rem;
+      }
+      .project-tree ul {
+        list-style: none;
+        padding-left: 1.5rem;
+      }
+      .project-tree li {
+        position: relative;
+        padding-left: 1.5rem;
+      }
+      .project-tree li::before {
+        content: "▸";
+        position: absolute;
+        left: 0;
+        color: #569cd6;
+      }
+      .project-tree .folder::before {
+        content: "📁";
+        color: #ffd700;
+      }
+      .project-tree .file::before {
+        content: "📄";
+        color: #9cdcfe;
+      }
+    </style>
+  </head>
+  <body class="bg-light">
+    <div class="container my-5">
+      <h1 class="mb-4">CJ CLI Tool Documentation</h1>
+
+      <div class="alert alert-info">
+        <h5 class="alert-heading">What is CJ CLI?</h5>
+        <p>
+          CJ CLI is a PHP command-line tool to speed up PHP development by
+          providing easy commands for:
+        </p>
+        <ul>
+          <li>Creating PHP files with strict types.</li>
+          <li>
+            Generating PSR-4 classes, interfaces, traits, abstract classes, and
+            enums.
+          </li>
+          <li>
+            Safe deleting files/directories by moving them to a
+            <code>.trash</code> folder.
+          </li>
+          <li>Undoing deletions and restoring items from the trash.</li>
+          <li>Reduce repetitive boilerplate code.</li>
+        </ul>
+        <p>
+          Think of it as a developer-friendly tool to automate repetitive tasks
+          in your PHP projects.
+        </p>
+      </div>
+
+      <div class="alert alert-warning">
+        <h5 class="alert-heading">Installation Instructions</h5>
+        <ol>
+          <li>Make sure PHP is installed on your system.</li>
+          <li>
+            Download or clone the CJ CLI repository to your project directory:
+            <div class="command-examples"><pre>git clone https://github.com/cjtechworld/cj-cli.git</pre></div>
+            Or visit: <a href="https://github.com/cjtechworld/cj-cli" target="_blank" rel="noopener">https://github.com/cjtechworld/cj-cli</a>
+            <div class="mt-2 small text-muted">Important: cloning will create a <code>cj-cli</code> folder. The <code>cj</code> script must be in your project root (or in your PATH) for commands like <code>php cj</code> or <code>php cj:make</code> to work correctly. Internally the script uses its own directory as the project root (it uses PHP's <code>__DIR__</code>), so leaving it in the <code>cj-cli</code> folder will cause generated files to appear relative to that folder instead of your project.</div>
+            <div class="command-examples mt-2"><pre># Move the script into your project root (Linux/macOS)
+mv cj-cli/cj .
+# Make it executable
+chmod +x cj
+
+# Or make it globally available (Linux/macOS)
+sudo mv cj /usr/local/bin/cj
+
+# Windows (PowerShell)
+Copy-Item .\cj-cli\cj -Destination .\ -Force
+# Then run
+php cj --help
+</pre></div>
+          </li>
+          <li>
+            Run
+            <div class="command-examples"><pre>php cj --help</pre></div>
+            to verify installation.
+          </li>
+        </ol>
+      </div>
+
+      <h2>Quick Command Reference</h2>
+      <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-md-4">
+          <div class="card">
+            <div class="card-body p-2">
+              <div class="small text-muted">Create files</div>
+              <pre class="mb-0 cmd-block prompt">php cj foo.php bar.php</pre>
+            </div>
+          </div>
+        </div>
+        <div class="col-sm-6 col-md-4">
+          <div class="card">
+            <div class="card-body p-2">
+              <div class="small text-muted">Generate class / interface / trait / enum</div>
+              <pre class="mb-0 cmd-block prompt">php cj:make class app Path/ClassName</pre>
+            </div>
+          </div>
+        </div>
+        <div class="col-sm-6 col-md-4">
+          <div class="card">
+            <div class="card-body p-2">
+              <div class="small text-muted">Safe delete / trash</div>
+              <pre class="mb-0 cmd-block prompt">php cj delete path/to/file_or_directory</pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="d-flex gap-2 mb-4">
+        <a class="btn btn-outline-primary btn-sm" href="https://github.com/cjtechworld/cj-cli" target="_blank" rel="noopener">Download / Clone (GitHub)</a>
+        <button class="btn btn-outline-secondary btn-sm" id="play-demo-btn">Play demo</button>
+      </div>
+
+      <h2>Basic Usage</h2>
+      <div class="row g-3 mb-4">
+        <div class="col-md-6">
+          <h5>Command</h5>
+          <div class="cmd-block position-relative">
+            <pre id="basic-usage-cmd" class="prompt">php cj file.php foo.php bar/baz.php</pre>
+            <button class="btn btn-sm btn-light copy-btn" data-target="basic-usage-cmd">Copy</button>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <h5>Generated (VS Code preview)</h5>
+          <div class="vs-code position-relative">
+            <div class="vs-header">
+              <span class="dot red"></span>
+              <span class="dot yellow"></span>
+              <span class="dot green"></span>
+              <span class="filename">foo.php</span>
+            </div>
+            <pre id="basic-usage-gen" class="vs-editor">&lt;?php
+
+declare(strict_types=1);
+
+// foo.php created by CJ CLI</pre>
+            <button class="btn btn-sm btn-light copy-btn" data-target="basic-usage-gen">Copy</button>
+          </div>
+        </div>
+      </div>
+
+      <h2>Generate PSR-4 Class / Interface / Trait / Enum</h2>
+      <p class="small text-muted">Use the <code>cj</code> script to run generation commands. PSR-4 generation uses the <code>cj:make</code> command (e.g. <code>php cj:make class app Path/ClassName</code>); general file creation uses the plain <code>php cj foo.php</code> form.</p>
+      <div class="position-relative command-examples">
+        <pre id="make-class">
+php cj:make class app Path/ClassName [extends Base] [implements Interface,...]
+Options: class, abstract, interface, trait, enum
+Example:
+php cj:make class app Example/ClassExample</pre
+        >
+        <button class="btn btn-sm btn-light copy-btn" data-target="make-class">
+          Copy
+        </button>
+      </div>
+
+      <h2>Safe Delete</h2>
+      <div class="position-relative command-examples">
+        <pre id="safe-delete">
+php cj delete path/to/file_or_directory
+Moves file/directory to .trash. Confirmation required.</pre
+        >
+        <button class="btn btn-sm btn-light copy-btn" data-target="safe-delete">
+          Copy
+        </button>
+      </div>
+
+      <h2>Undo Delete</h2>
+      <div class="position-relative command-examples">
+        <pre id="undo">
+php cj undo
+Restores the last deleted file/directory from .trash.</pre
+        >
+        <button class="btn btn-sm btn-light copy-btn" data-target="undo">
+          Copy
+        </button>
+      </div>
+
+      <h2>Trash</h2>
+      <div class="position-relative command-examples">
+        <pre id="trash">
+php cj trash
+List deleted items.
+
+php cj trash restore
+Restore deleted items interactively or all at once.</pre
+        >
+        <button class="btn btn-sm btn-light copy-btn" data-target="trash">
+          Copy
+        </button>
+      </div>
+
+      <h2>Command Examples</h2>
+      <div class="position-relative command-examples">
+        <pre id="examples">
+php cj foo.php bar.php baz/test.php
+php cj:make class app Example/ClassExample
+php cj delete app/Example/ClassExample.php
+php cj undo
+php cj trash restore</pre
+        >
+        <button class="btn btn-sm btn-light copy-btn" data-target="examples">
+          Copy
+        </button>
+      </div>
+
+      <h2 id="live-demo">Live Demo — Creating a file</h2>
+      <div class="row g-3 mb-4 align-items-start">
+        <div class="col-md-6">
+          <h6>Animated Command</h6>
+          <div class="cmd-block position-relative demo-terminal">
+            <pre class="prompt"><span class="typed" data-text="php cj foo.php"></span></pre>
+            <div class="mt-2">
+              <button class="btn btn-sm btn-outline-primary" id="demo-play">Play</button>
+              <button class="btn btn-sm btn-outline-secondary" id="demo-reset">Reset</button>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <h6>Animated Generated (VS Code preview)</h6>
+          <div class="vs-code position-relative demo-vscode">
+            <div class="vs-header">
+              <span class="dot red"></span>
+              <span class="dot yellow"></span>
+              <span class="dot green"></span>
+              <span class="filename">foo.php</span>
+            </div>
+            <pre class="vs-editor demo-file" aria-live="polite"></pre>
+          </div>
+        </div>
+      </div>
+
+      <h2>Example Project Structure After CJ CLI Commands</h2>
+    <div class="project-tree">
+        <ul>
+            <li class="folder">app
+                <ul>
+                    <li class="folder">Example
+                        <ul>
+                            <li class="file">ClassExample.php</li>
+                            <li class="file">MyInterface.php</li>
+                            <li class="file">MyAbstract.php</li>
+                            <li class="file">MyTrait.php</li>
+                            <li class="file">MyEnum.php</li>
+                        </ul>
+                    </li>
+                    <li class="file">foo.php</li>
+                    <li class="file">bar.php</li>
+                    <li class="file">baz.php</li>
+                </ul>
+            </li>
+            <li class="folder">.trash
+                <ul>
+                    <li class="file">DeletedFile.php</li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+
+    <h2>Quick Troubleshooting</h2>
+    <div class="alert alert-light border">
+      <h6>Files generated in the wrong folder?</h6>
+      <ol>
+        <li>Check where you ran the command from (your current working directory) and where the <code>cj</code> script lives.</li>
+        <li>If you cloned into <code>cj-cli/</code>, move the script into your project root and make it executable:<div class="command-examples mt-2"><pre>mv cj-cli/cj .
+chmod +x cj</pre></div></li>
+        <li>Or make it globally available so you can run it from any project:<div class="command-examples mt-2"><pre>sudo mv cj /usr/local/bin/cj</pre></div></li>
+        <li>If files were already created in the wrong folder, move them into your project or remove and re-run the command from the correct location.</li>
+        <li class="mt-2">Tip: If you understand the consequences and want to skip the confirmation prompt, add <code>--yes</code> (or <code>-y</code> / <code>--force</code>) to your command, e.g. <code>php cj --yes foo.php</code> or <code>php cj:make class app Example/ClassExample --yes</code>.</li>
+      </ol>
+    </div>
+
+    <h2>Basic File Creation</h2>
+    <div class="position-relative command-examples">
+        <pre id="basic-usage">php cj foo.php bar.php
+Creates files:
+<code class="token-keyword">&lt;?php</code>
+
+<code class="token-keyword">declare</code>(strict_types=1);
+
+# foo.php, bar.php created with strict types
+</pre>
+        <button class="btn btn-sm btn-light copy-btn" data-target="basic-usage">Copy</button>
+    </div>
+
+    <h2>Generate PSR-4 Class / Interface / Abstract / Trait / Enum</h2>
+
+    <h5>Class Example</h5>
+    <div class="row g-3 mb-4">
+      <div class="col-md-6">
+        <h6>Command</h6>
+        <div class="cmd-block position-relative">
+          <pre id="make-class-cmd" class="prompt">php cj:make class app Example/ClassExample</pre>
+          <button class="btn btn-sm btn-light copy-btn" data-target="make-class-cmd">Copy</button>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <h6>Generated (VS Code preview)</h6>
+        <div class="vs-code position-relative">
+          <div class="vs-header">
+            <span class="dot red"></span>
+            <span class="dot yellow"></span>
+            <span class="dot green"></span>
+            <span class="filename">app/Example/ClassExample.php</span>
+          </div>
+          <pre id="make-class-gen" class="vs-editor">&lt;?php
+
+declare(strict_types=1);
+
+namespace App\Example;
+
+use App\BaseClass;
+use App\InterfaceA;
+use App\InterfaceB;
+
+class ClassExample extends BaseClass implements InterfaceA, InterfaceB
+{
+    // Class body
+}
+</pre>
+          <button class="btn btn-sm btn-light copy-btn" data-target="make-class-gen">Copy</button>
+        </div>
+      </div>
+    </div>
+
+    <h5>Interface Example</h5>
+    <div class="row g-3 mb-4">
+      <div class="col-md-6">
+        <h6>Command</h6>
+        <div class="cmd-block position-relative">
+          <pre id="make-interface-cmd" class="prompt">php cj:make interface app Example/MyInterface</pre>
+          <button class="btn btn-sm btn-light copy-btn" data-target="make-interface-cmd">Copy</button>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <h6>Generated (VS Code preview)</h6>
+        <div class="vs-code position-relative">
+          <div class="vs-header">
+            <span class="dot red"></span>
+            <span class="dot yellow"></span>
+            <span class="dot green"></span>
+            <span class="filename">app/Example/MyInterface.php</span>
+          </div>
+          <pre id="make-interface-gen" class="vs-editor">&lt;?php
+
+declare(strict_types=1);
+
+namespace App\Example;
+
+interface MyInterface
+{
+    // Interface methods
+}
+</pre>
+          <button class="btn btn-sm btn-light copy-btn" data-target="make-interface-gen">Copy</button>
+        </div>
+      </div>
+    </div>
+
+    <h5>Abstract Class Example</h5>
+    <div class="row g-3 mb-4">
+      <div class="col-md-6">
+        <h6>Command</h6>
+        <div class="cmd-block position-relative">
+          <pre id="make-abstract-cmd" class="prompt">php cj:make abstract app Example/MyAbstract</pre>
+          <button class="btn btn-sm btn-light copy-btn" data-target="make-abstract-cmd">Copy</button>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <h6>Generated (VS Code preview)</h6>
+        <div class="vs-code position-relative">
+          <div class="vs-header">
+            <span class="dot red"></span>
+            <span class="dot yellow"></span>
+            <span class="dot green"></span>
+            <span class="filename">app/Example/MyAbstract.php</span>
+          </div>
+          <pre id="make-abstract-gen" class="vs-editor">&lt;?php
+
+declare(strict_types=1);
+
+namespace App\Example;
+
+abstract class MyAbstract
+{
+    // Abstract class body
+}
+</pre>
+          <button class="btn btn-sm btn-light copy-btn" data-target="make-abstract-gen">Copy</button>
+        </div>
+      </div>
+    </div>
+
+    <h5>Trait Example</h5>
+    <div class="row g-3 mb-4">
+      <div class="col-md-6">
+        <h6>Command</h6>
+        <div class="cmd-block position-relative">
+          <pre id="make-trait-cmd" class="prompt">php cj:make trait app Example/MyTrait</pre>
+          <button class="btn btn-sm btn-light copy-btn" data-target="make-trait-cmd">Copy</button>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <h6>Generated (VS Code preview)</h6>
+        <div class="vs-code position-relative">
+          <div class="vs-header">
+            <span class="dot red"></span>
+            <span class="dot yellow"></span>
+            <span class="dot green"></span>
+            <span class="filename">app/Example/MyTrait.php</span>
+          </div>
+          <pre id="make-trait-gen" class="vs-editor">&lt;?php
+
+declare(strict_types=1);
+
+namespace App\Example;
+
+trait MyTrait
+{
+    // Trait methods
+}
+</pre>
+          <button class="btn btn-sm btn-light copy-btn" data-target="make-trait-gen">Copy</button>
+        </div>
+      </div>
+    </div>
+
+    <h5>Enum Example</h5>
+    <div class="row g-3 mb-4">
+      <div class="col-md-6">
+        <h6>Command</h6>
+        <div class="cmd-block position-relative">
+          <pre id="make-enum-cmd" class="prompt">php cj:make enum app Example/MyEnum</pre>
+          <button class="btn btn-sm btn-light copy-btn" data-target="make-enum-cmd">Copy</button>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <h6>Generated (VS Code preview)</h6>
+        <div class="vs-code position-relative">
+          <div class="vs-header">
+            <span class="dot red"></span>
+            <span class="dot yellow"></span>
+            <span class="dot green"></span>
+            <span class="filename">app/Example/MyEnum.php</span>
+          </div>
+          <pre id="make-enum-gen" class="vs-editor">&lt;?php
+
+declare(strict_types=1);
+
+namespace App\Example;
+
+enum MyEnum: string
+{
+    case EXAMPLE = 'example';
+    case OTHER = 'other';
+
+    // Usage:
+    // $value = MyEnum::EXAMPLE->value; // 'example'
+}
+</pre>
+          <button class="btn btn-sm btn-light copy-btn" data-target="make-enum-gen">Copy</button>
+        </div>
+      </div>
+    </div>
+    <script>
+      async function copyText(text) {
+        try {
+          await navigator.clipboard.writeText(text);
+          return true;
+        } catch (err) {
+          // fallback for insecure context
+          const textarea = document.createElement("textarea");
+          textarea.value = text;
+          textarea.style.position = "fixed";
+          document.body.appendChild(textarea);
+          textarea.select();
+          const successful = document.execCommand("copy");
+          document.body.removeChild(textarea);
+          return successful;
+        }
+      }
+
+      document.querySelectorAll(".copy-btn").forEach((btn) => {
+        const targetId = btn.getAttribute("data-target");
+        // Accessibility: add an aria-label and title for screen reader / hover info
+        btn.setAttribute('aria-label', 'Copy snippet ' + targetId);
+        btn.setAttribute('title', 'Copy snippet: ' + targetId);
+
+        btn.addEventListener("click", async () => {
+          const code = document.getElementById(targetId).innerText;
+          const success = await copyText(code);
+          if (success) {
+            btn.innerHTML = '<span class="text-success">&#10003; Copied</span>';
+          } else {
+            btn.innerHTML = '<span class="text-danger">&#10007; Failed</span>';
+          }
+          setTimeout(() => (btn.innerHTML = "Copy"), 1500);
+        });
+      });
+
+      /* ---------------------
+         Demo: typing animation
+         --------------------- */
+      function typeText(el, text, speed = 60) {
+        el.textContent = '';
+        return new Promise((resolve) => {
+          let i = 0;
+          const run = () => {
+            if (i <= text.length) {
+              el.textContent = text.slice(0, i);
+              i++;
+              setTimeout(run, speed);
+            } else {
+              resolve();
+            }
+          };
+          run();
+        });
+      }
+
+      async function playDemo() {
+        const typed = document.querySelector('.typed');
+        const demoFile = document.querySelector('.demo-file');
+        const cmdStr = typed.getAttribute('data-text') || '';
+        demoFile.textContent = '';
+        await typeText(typed, cmdStr, 80);
+        // Small delay then reveal generated file content
+        await new Promise((r) => setTimeout(r, 400));
+        const content = `<?php\n\ndeclare(strict_types=1);\n\n// foo.php created by CJ CLI\n`;
+        await typeText(demoFile, content, 25);
+      }
+
+      document.getElementById('demo-play')?.addEventListener('click', () => playDemo());
+      document.getElementById('demo-reset')?.addEventListener('click', () => {
+        document.querySelector('.typed').textContent = '';
+        document.querySelector('.demo-file').textContent = '';
+      });
+
+      // A top-level Play Demo button (from Quick Command Reference)
+      document.getElementById('play-demo-btn')?.addEventListener('click', () => {
+        document.getElementById('live-demo')?.scrollIntoView({ behavior: 'smooth' });
+        // small delay so scroll completes visually
+        setTimeout(() => playDemo(), 600);
+      });
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>
