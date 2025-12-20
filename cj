@@ -367,6 +367,9 @@ if ($args) {
   }
 }
 
+$createdCount = 0;
+$skippedCount = 0;
+
 foreach ($targetsEntries as $entry) {
   $target = $entry['target'];
   // Determine applied modifiers (per-target override global)
@@ -388,8 +391,10 @@ foreach ($targetsEntries as $entry) {
   if (!is_dir($dir)) mkdir($dir, 0755, true);
 
   $file = "$dir/$className.php";
-  if (file_exists($file)) {
+  // Robust existence check (handle path normalization on Windows)
+  if (file_exists($file) || realpath($file) !== false) {
     echo color("❌ File already exists: $file\n", 'red');
+    $skippedCount++;
     continue;
   }
 
@@ -465,5 +470,9 @@ PHP;
 
   file_put_contents($file, $template);
   echo color("Created: $file\n", 'green');
+  $createdCount++;
 }
-echo color("Created: $file\n", 'green');
+
+if (count($targetsEntries) > 1) {
+  echo color("Summary: $createdCount created, $skippedCount skipped (already existed)\n", 'cyan');
+}
