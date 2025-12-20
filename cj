@@ -34,6 +34,12 @@ if ($argc === 2 && $argv[1] === '--help') {
     $examples[] = "  php cj make:$type app Example/{$type}Example";
     $examples[] = "  php cj make $type app Example/{$type}Example";
   }
+  // Multi-target examples
+  $examples[] = "  php cj make:class app PaymentGateway/Stripe/Transaction PaymentGateway/Paypal/Transaction
+  php cj make:class app PaymentGateway/Stripe/Transaction:extends=Field PaymentGateway/Paypal/Transaction
+  php cj make:class app PaymentGateway/Stripe/Transaction:implements=StripeInterface PaymentGateway/Paypal/Transaction:implements=PaypalInterface";
+  $examples[] = "  php cj make:class app PaymentGateway/Stripe/Transaction:extends=Field PaymentGateway/Paypal/Transaction";
+  $examples[] = "  php cj make:class app PaymentGateway/Stripe/Transaction:implements=StripeInterface PaymentGateway/Paypal/Transaction:implements=PaypalInterface";
   $examplesText = implode("\n", $examples);
 
   echo <<<HELP
@@ -317,35 +323,58 @@ if ($root !== 'app') exit(color("Only 'app' root is supported for class generati
 
 // Support multiple targets after the root (e.g. `php cj make:class app A B C`)
 $targets = [];
+$targetsEntries = [];
 while ($args && !in_array($args[0], ['extends', 'implements'], true)) {
-  $targets[] = array_shift($args);
+  $token = array_shift($args);
+  // token may be: target[:key=value][:key2=value2]
+  $parts = explode(':', $token);
+  $base = array_shift($parts);
+  $entry = ['target' => $base, 'extends' => null, 'implements' => []];
+  foreach ($parts as $p) {
+    if (str_contains($p, '=')) {
+      [$k, $v] = array_map('trim', explode('=', $p, 2));
+      if ($k === 'extends') {
+        if ($type === 'interface') {
+          $entry['extends'] = array_map('trim', explode(',', $v));
+        } else {
+          $entry['extends'] = trim($v);
+        }
+      } elseif ($k === 'implements') {
+        $entry['implements'] = array_map('trim', explode(',', $v));
+      }
+    }
+  }
+  $targetsEntries[] = $entry;
 }
-if (empty($targets)) exit(color("No target specified.\n", 'red'));
+if (empty($targetsEntries)) exit(color("No target specified.\n", 'red'));
 
-// Parse optional modifiers only allowed for single-target commands
-$extends = null;
-$implements = [];
+// Parse optional global modifiers (apply to all targets without per-target override)
+$globalExtends = null;
+$globalImplements = [];
 if ($args) {
   while ($args) {
     $key = array_shift($args);
     if ($key === 'extends') {
       $val = array_shift($args);
       if ($type === 'interface') {
-        $extends = array_map('trim', explode(',', $val));
+        $globalExtends = array_map('trim', explode(',', $val));
       } else {
-        $extends = trim($val);
+        $globalExtends = trim($val);
       }
     } elseif ($key === 'implements') {
-      $implements = array_map('trim', explode(',', array_shift($args)));
+      $globalImplements = array_map('trim', explode(',', array_shift($args)));
     }
   }
 }
 
-if (count($targets) > 1 && ($extends || !empty($implements))) {
-  exit(color("When creating multiple targets in a single command, 'extends' and 'implements' are not supported. Run separate commands per target to specify those options.\n", 'red'));
-}
+foreach ($targetsEntries as $entry) {
+  $target = $entry['target'];
+  // Determine applied modifiers (per-target override global)
+  $appliedExtends = $entry['extends'] ?? null;
+  $appliedImplements = $entry['implements'] ?? [];
+  if ($appliedExtends === null) $appliedExtends = $globalExtends;
+  if (empty($appliedImplements)) $appliedImplements = $globalImplements;
 
-foreach ($targets as $target) {
   /**
    * PSR-4
    */
@@ -375,8 +404,8 @@ foreach ($targets as $target) {
       if (!str_starts_with($fqcn, $namespace)) $uses[$fqcn] = $fqcn;
     }
   };
-  $addUse($extends);
-  $addUse($implements);
+  $addUse($appliedExtends);
+  $addUse($appliedImplements);
 
   // Helper to get short name for use in signatures
   $short = function ($name) {
@@ -397,15 +426,15 @@ foreach ($targets as $target) {
   };
 
   if ($type === 'interface') {
-    if ($extends) {
-      $extNames = is_array($extends) ? $extends : array_map('trim', explode(',', $extends));
+    if ($appliedExtends) {
+      $extNames = is_array($appliedExtends) ? $appliedExtends : array_map('trim', explode(',', $appliedExtends));
       $shortNames = array_map(fn($n) => $short($n), $extNames);
       $signature .= ' extends ' . implode(', ', $shortNames);
     }
   } else {
-    if ($extends) $signature .= " extends " . $short($extends);
-    if (!empty($implements) && in_array($type, ['class', 'abstract'], true)) {
-      $sigImpls = array_map(fn($n) => $short($n), $implements);
+    if ($appliedExtends) $signature .= " extends " . $short($appliedExtends);
+    if (!empty($appliedImplements) && in_array($type, ['class', 'abstract'], true)) {
+      $sigImpls = array_map(fn($n) => $short($n), $appliedImplements);
       $signature .= ' implements ' . implode(', ', $sigImpls);
     }
   }

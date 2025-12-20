@@ -55,12 +55,21 @@ Create one or more PHP files with strict types:
 php cj foo.php bar/baz.php
 ```
 
-Create multiple PSR-4 classes in one command (no per-target `extends`/`implements`):
+Create multiple PSR-4 classes in one command (per-target modifiers supported using a colon syntax):
 
-```bash
+````bash
+# Create two classes without modifiers
 php cj make:class app PaymentGateway/Stripe/Transaction PaymentGateway/Paypal/Transaction
-```
 
+# Per-target modifier (only applies to this target)
+php cj make:class app PaymentGateway/Stripe/Transaction:extends=Field PaymentGateway/Paypal/Transaction
+
+# Per-target implements
+php cj make:class app PaymentGateway/Stripe/Transaction:implements=StripeInterface PaymentGateway/Paypal/Transaction:implements=PaypalInterface
+
+# Or apply a global modifier to all targets (no colons)
+php cj make:class app PaymentGateway/Stripe/Transaction PaymentGateway/Paypal/Transaction extends Field
+```}{
 Generate PSR‑4 scaffolding (class/interface/abstract/trait/enum):
 
 ```bash
@@ -76,7 +85,7 @@ php cj make:interface app Path/MyInterface extends BaseInterface1,BaseInterface2
 
 php cj make:trait app Path/MyTrait
 php cj make:enum app Path/MyEnum
-```
+````
 
 Safe delete / trash / undo:
 
