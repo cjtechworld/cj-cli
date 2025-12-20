@@ -315,97 +315,114 @@ array_shift($args); // remove script name (was originally $argv[0])
 $root = array_shift($args);
 if ($root !== 'app') exit(color("Only 'app' root is supported for class generation.\n", 'red'));
 
-$target = array_shift($args);
+// Support multiple targets after the root (e.g. `php cj make:class app A B C`)
+$targets = [];
+while ($args && !in_array($args[0], ['extends', 'implements'], true)) {
+  $targets[] = array_shift($args);
+}
+if (empty($targets)) exit(color("No target specified.\n", 'red'));
 
+// Parse optional modifiers only allowed for single-target commands
 $extends = null;
 $implements = [];
-while ($args) {
-  $key = array_shift($args);
-  if ($key === 'extends') {
-    $val = array_shift($args);
-    // interfaces may extend multiple parents (comma-separated)
-    if ($type === 'interface') {
-      $extends = array_map('trim', explode(',', $val));
-    } else {
-      $extends = trim($val);
+if ($args) {
+  while ($args) {
+    $key = array_shift($args);
+    if ($key === 'extends') {
+      $val = array_shift($args);
+      if ($type === 'interface') {
+        $extends = array_map('trim', explode(',', $val));
+      } else {
+        $extends = trim($val);
+      }
+    } elseif ($key === 'implements') {
+      $implements = array_map('trim', explode(',', array_shift($args)));
     }
-  } elseif ($key === 'implements') $implements = array_map('trim', explode(',', array_shift($args)));
-}
-
-/**
- * PSR-4
- */
-$basePath = __DIR__ . '/app';
-$baseNamespace = 'App';
-$parts = explode('/', $target);
-$className = array_pop($parts);
-$dir = $basePath . ($parts ? '/' . implode('/', $parts) : '');
-$namespace = $baseNamespace . ($parts ? '\\' . implode('\\', $parts) : '');
-
-if (!is_dir($dir)) mkdir($dir, 0755, true);
-
-$file = "$dir/$className.php";
-if (file_exists($file)) exit(color("File already exists: $file\n", 'red'));
-
-// Auto-use imports
-$uses = [];
-$addUse = function ($name) use (&$uses, $namespace) {
-  if (!$name) return;
-  $names = is_array($name) ? $name : [$name];
-  foreach ($names as $n) {
-    if (!$n) continue;
-    $fqcn = str_contains($n, '\\') ? $n : $namespace . '\\' . $n;
-    if (!str_starts_with($fqcn, $namespace)) $uses[$fqcn] = $fqcn;
-  }
-};
-$addUse($extends);
-$addUse($implements);
-
-// Helper to get short name for use in signatures
-$short = function ($name) {
-  if (is_array($name)) {
-    return array_map(fn($n) => ($n === '' ? '' : array_reverse(explode('\\', $n))[0]), $name);
-  }
-  if (!$name) return '';
-  return array_reverse(explode('\\', $name))[0];
-};
-
-// Build signature
-$signature = match ($type) {
-  'interface' => "interface $className",
-  'abstract' => "abstract class $className",
-  'trait' => "trait $className",
-  'enum' => "enum $className",
-  default => "class $className",
-};
-
-if ($type === 'interface') {
-  if ($extends) {
-    $extNames = is_array($extends) ? $extends : array_map('trim', explode(',', $extends));
-    $shortNames = array_map(fn($n) => $short($n), $extNames);
-    $signature .= ' extends ' . implode(', ', $shortNames);
-  }
-} else {
-  if ($extends) $signature .= " extends " . $short($extends);
-  if (!empty($implements) && in_array($type, ['class', 'abstract'], true)) {
-    $sigImpls = array_map(fn($n) => $short($n), $implements);
-    $signature .= ' implements ' . implode(', ', $sigImpls);
   }
 }
 
-$body = match ($type) {
-  'interface' => "    // Interface methods\n",
-  'trait' => "    // Trait methods\n",
-  'enum' => "\n    case EXAMPLE;\n",
-  'abstract' => "    \n",
-  default => "",
-};
+if (count($targets) > 1 && ($extends || !empty($implements))) {
+  exit(color("When creating multiple targets in a single command, 'extends' and 'implements' are not supported. Run separate commands per target to specify those options.\n", 'red'));
+}
 
-$useBlock = '';
-foreach ($uses as $fqcn) $useBlock .= "use $fqcn;\n";
-if ($useBlock) $useBlock .= "\n";
+foreach ($targets as $target) {
+  /**
+   * PSR-4
+   */
+  $basePath = __DIR__ . '/app';
+  $baseNamespace = 'App';
+  $parts = explode('/', $target);
+  $className = array_pop($parts);
+  $dir = $basePath . ($parts ? '/' . implode('/', $parts) : '');
+  $namespace = $baseNamespace . ($parts ? '\\' . implode('\\', $parts) : '');
 
-$template = <<<PHP
+  if (!is_dir($dir)) mkdir($dir, 0755, true);
+
+  $file = "$dir/$className.php";
+  if (file_exists($file)) {
+    echo color("❌ File already exists: $file\n", 'red');
+    continue;
+  }
+
+  // Auto-use imports
+  $uses = [];
+  $addUse = function ($name) use (&$uses, $namespace) {
+    if (!$name) return;
+    $names = is_array($name) ? $name : [$name];
+    foreach ($names as $n) {
+      if (!$n) continue;
+      $fqcn = str_contains($n, '\\') ? $n : $namespace . '\\' . $n;
+      if (!str_starts_with($fqcn, $namespace)) $uses[$fqcn] = $fqcn;
+    }
+  };
+  $addUse($extends);
+  $addUse($implements);
+
+  // Helper to get short name for use in signatures
+  $short = function ($name) {
+    if (is_array($name)) {
+      return array_map(fn($n) => ($n === '' ? '' : array_reverse(explode('\\', $n))[0]), $name);
+    }
+    if (!$name) return '';
+    return array_reverse(explode('\\', $name))[0];
+  };
+
+  // Build signature
+  $signature = match ($type) {
+    'interface' => "interface $className",
+    'abstract' => "abstract class $className",
+    'trait' => "trait $className",
+    'enum' => "enum $className",
+    default => "class $className",
+  };
+
+  if ($type === 'interface') {
+    if ($extends) {
+      $extNames = is_array($extends) ? $extends : array_map('trim', explode(',', $extends));
+      $shortNames = array_map(fn($n) => $short($n), $extNames);
+      $signature .= ' extends ' . implode(', ', $shortNames);
+    }
+  } else {
+    if ($extends) $signature .= " extends " . $short($extends);
+    if (!empty($implements) && in_array($type, ['class', 'abstract'], true)) {
+      $sigImpls = array_map(fn($n) => $short($n), $implements);
+      $signature .= ' implements ' . implode(', ', $sigImpls);
+    }
+  }
+
+  $body = match ($type) {
+    'interface' => "    // Interface methods\\n",
+    'trait' => "    // Trait methods\\n",
+    'enum' => "\\n    case EXAMPLE;\\n",
+    'abstract' => "    \\n",
+    default => "",
+  };
+
+  $useBlock = '';
+  foreach ($uses as $fqcn) $useBlock .= "use $fqcn;\\n";
+  if ($useBlock) $useBlock .= "\\n";
+
+  $template = <<<PHP
 <?php
 
 declare(strict_types=1);
@@ -417,5 +434,7 @@ $useBlock$signature
 $body}
 PHP;
 
-file_put_contents($file, $template);
+  file_put_contents($file, $template);
+  echo color("Created: $file\n", 'green');
+}
 echo color("Created: $file\n", 'green');

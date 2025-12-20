@@ -309,8 +309,10 @@ php cj make:class app Path/ClassName [extends Base] [implements Interface,...]
 # or
 php cj make class app Path/ClassName [extends Base] [implements Interface,...]
 Options: class, abstract, interface, trait, enum
-Example:
+Examples:
 php cj make:class app Example/ClassExample
+# Create multiple classes at once (no per-target extends/implements):
+php cj make:class app PaymentGateway/Stripe/Transaction PaymentGateway/Paypal/Transaction
 # or
 php cj make class app Example/ClassExample</pre
         >

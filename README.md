@@ -55,6 +55,12 @@ Create one or more PHP files with strict types:
 php cj foo.php bar/baz.php
 ```
 
+Create multiple PSR-4 classes in one command (no per-target `extends`/`implements`):
+
+```bash
+php cj make:class app PaymentGateway/Stripe/Transaction PaymentGateway/Paypal/Transaction
+```
+
 Generate PSR‑4 scaffolding (class/interface/abstract/trait/enum):
 
 ```bash
